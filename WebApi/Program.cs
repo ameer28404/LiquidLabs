@@ -1,18 +1,17 @@
+using ElmahCore.Mvc;
 using WebApi.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-
 builder.Services.AddControllers();
 builder.Services.AddHttpClient();
 builder.Services.RegisterServices();
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
+builder.Services.AddElmahLogging(builder.Environment);
+
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if(app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
@@ -21,10 +20,11 @@ if(app.Environment.IsDevelopment())
         options.SwaggerEndpoint("/openapi/v1.json", "api");
     });
 }
-app.UseHttpsRedirection();
 
+app.UseHttpsRedirection();
+app.UseMiddleware<ErrorHandlingMiddleware>();
 app.UseAuthorization();
 
 app.MapControllers();
-
+app.UseElmah();
 app.Run();

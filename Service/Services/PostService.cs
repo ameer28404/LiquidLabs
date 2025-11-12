@@ -25,7 +25,37 @@ namespace Service.Services
 
         public async Task<IEnumerable<Post>> GetPostsAsync()
         {
-            return await _postRepository.GetAllPostsAsync();
+            var postsInDb = await _postRepository.GetAllPostsAsync();
+            if(postsInDb != null && postsInDb.Any())
+            {
+                return postsInDb;
+            }
+
+            var postsFromApi = await _httpClient.GetFromJsonAsync<List<Post>>("posts");
+            if(postsFromApi is not null)
+            {
+                foreach(var post in postsFromApi)
+                {
+                    await _postRepository.SavePostAsync(post);
+                }
+            }
+            return postsFromApi ?? new List<Post>();
+        }
+
+        public async Task<Post?> GetPostByIdAsync(int id)
+        {
+            var postInDb = await _postRepository.GetPostByIdAsync(id);
+            if(postInDb != null)
+            {
+                return postInDb;
+            }
+
+            var postFromApi = await _httpClient.GetFromJsonAsync<Post>($"posts/{id}");
+            if(postFromApi != null)
+            {
+                await _postRepository.SavePostAsync(postFromApi);
+            }
+            return postFromApi;
         }
     }
 }
